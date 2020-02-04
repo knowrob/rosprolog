@@ -72,7 +72,6 @@ register_ros_package(Package, AbsoluteDirectory) :-
   asserta(library_directory(AbsoluteDirectory)),
   assert(user:file_search_path(ros, AbsoluteDirectory)),
   assert( ros_package_initialized(Package) ),
-  init_classpath,
   init_ros_package( AbsoluteDirectory ).
 
 register_ros_package(Package) :-
@@ -100,26 +99,3 @@ ros_path(URL, GlobalPath) :-
   ros_package_path(Pkg, PkgPath),
   % build global path and load OWL file
   atomic_list_concat([PkgPath|LocalPath], '/',  GlobalPath).
-
-:- assert(classpath_initialized(false)).
-init_classpath :-
-  classpath_initialized(true), !.
-init_classpath :-
-  classpath_initialized(false),
-  retract(classpath_initialized(false)),
-  assert(classpath_initialized(true)),
-  rosprolog_classpaths(Paths),
-  setenv("CLASSPATH",Paths).
-
-%% rosprolog_classpaths(+Paths) is nondet.
-% 
-% Read all classpath files from workspaces referenced in ROS_PACKAGE_PATH
-% to set up Java environment.
-%
-% @param Paths The CLASSPATH environment variable
-% 
-rosprolog_classpaths(Paths) :-
-  process_create(path('rosrun'), ['rosprolog', 'get_classpaths'], [stdout(pipe(Out)), process(PID)]),
-  read_line_to_codes(Out, C),
-  string_to_list(Paths, C),
-  process_wait(PID, _).
