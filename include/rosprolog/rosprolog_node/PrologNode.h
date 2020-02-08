@@ -28,6 +28,7 @@ public:
 		json_prolog_msgs::PrologQuery::Request &req,
 		json_prolog_msgs::PrologQuery::Response &res);
 	
+	void finish();
 	bool finish(
 		json_prolog_msgs::PrologFinish::Request &req,
 		json_prolog_msgs::PrologFinish::Response &res);
@@ -48,7 +49,6 @@ private:
 	bool exists(const std::string &id);
 	
 	void finish(const std::string &id);
-	void finish();
 	
 	bool has_more_solutions(const std::string &id);
 	
