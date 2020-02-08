@@ -2,6 +2,7 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <ros/package.h>
+#include <signal.h>
 
 #include <rosprolog/rosprolog_node/PrologNode.h>
 
@@ -180,9 +181,16 @@ bool PrologNode::next_solution(json_prolog_msgs::PrologNextSolution::Request &re
 	return true;
 }
 
+// Signal-safe flag for whether shutdown is requested
+sig_atomic_t volatile g_request_shutdown = 0;
+void sigint_handler(int sig)
+{
+	g_request_shutdown=1;
+}
+
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "rosprolog");
+	ros::init(argc, argv, "rosprolog", ros::init_options::NoSigintHandler);
 	ros::NodeHandle n;
 	// rosprolog can serve requests in parallel
 	int num_ros_threads=0;
@@ -213,6 +221,9 @@ int main(int argc, char **argv)
 		pl_av[pl_ac] = NULL;
 	}
 	PL_initialise(pl_ac, pl_av);
+	// Override the default ros sigint handler.
+	// This must be set after the first NodeHandle is created.
+	signal(SIGINT, sigint_handler);
 	//
 	PrologNode rosprolog(&n);
 	if(rosprolog.is_initialized()) {
@@ -224,11 +235,13 @@ int main(int argc, char **argv)
 		    "/rosprolog/finish", &PrologNode::finish, &rosprolog);
 		
 		ROS_INFO("rosprolog service is running.");
-		while (ros::ok()) {
+		while (ros::ok() && !g_request_shutdown) {
 			ros::spinOnce();
 			loop_rate.sleep();
 		}
 		ROS_INFO("rosprolog service is exiting.");
+		rosprolog.finish();
+		ros::shutdown();
 		
 		return EXIT_SUCCESS;
 	}
