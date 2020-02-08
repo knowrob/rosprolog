@@ -106,9 +106,11 @@ bool PrologNode::has_more_solutions(const std::string &id)
 void PrologNode::finish(const std::string &id)
 {
 	auto it = claimed_engines_.find(id);
-	it->second->release(true);
-	thread_pool_.release(it->second);
-	claimed_engines_.erase(it);
+	if(it != claimed_engines_.end()) {
+		it->second->release(true);
+		thread_pool_.release(it->second);
+		claimed_engines_.erase(it);
+	}
 }
 
 void PrologNode::finish()
