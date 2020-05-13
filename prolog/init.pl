@@ -44,7 +44,7 @@
 % @param PackagePath  Path towards the package to be initialized
 %
 init_ros_package( PackagePath ) :-
-  atom_concat(PackagePath, 'init.pl', InitFile),
+  atom_concat(PackagePath, '__init__.pl', InitFile),
   exists_file(InitFile),
   consult(InitFile), !.
 
@@ -68,7 +68,7 @@ register_ros_package(Package, _) :-
 register_ros_package(Package, AbsoluteDirectory) :-
   ros_package_path(Package, PackagePath),
   nonvar(PackagePath),
-  atom_concat(PackagePath, '/prolog/', AbsoluteDirectory),
+  atom_concat(PackagePath, '/src/', AbsoluteDirectory),
   asserta(library_directory(AbsoluteDirectory)),
   assert(user:file_search_path(ros, AbsoluteDirectory)),
   assert( ros_package_initialized(Package) ),
