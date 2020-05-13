@@ -105,8 +105,45 @@ rospl_run_tests(Pkg:Module, Opts) :-
       print_message(information,test_failed(ModAtom, '*', Error))
     ),
     test_suite_retract_(ModAtom)
+  ),
+  !.
+
+rospl_run_tests(Pkg, Opts) :-
+  atom(Pkg),
+  ros_package_path(Pkg,PkgPath),
+  atom_concat(PkgPath, '/prolog/', PlPath),
+  exists_directory(PlPath),
+  rospl_run_tests_in_dir_(Pkg,PlPath,PlPath,Opts),
+  !.
+
+%%
+rospl_run_tests_in_dir_(Pkg,BasePath,Dir,Opts) :-
+  directory_files(Dir,Entries),
+  forall(
+    ( member(Entry,Entries),
+      \+ Entry='..',
+      \+ Entry='.'
+    ), (
+      atomic_list_concat([Dir,Entry],'/',Child),
+      ( exists_directory(Child) ->
+        rospl_run_tests_in_dir_(Pkg,BasePath,Child,Opts) ;
+        rospl_run_test_file_(Pkg,BasePath,Child,Opts)
+      )
+    )
   ).
 
+rospl_run_test_file_(_Pkg,_BasePath,File,_Opts) :-
+  \+ file_name_extension(_, plt, File),
+  !.
+rospl_run_test_file_(Pkg,BasePath,File,Opts) :-
+  file_name_extension(X,plt,File),
+  atom_concat(BasePath,ModulePath,X),
+  ( atom_concat('/',Stripped,ModulePath) ->
+    rospl_run_tests(Pkg:Stripped,Opts);
+    rospl_run_tests(Pkg:ModulePath,Opts)
+  ).
+
+%%
 rospl_run_tests_(Pkg, Module, Opts) :-
   % load files
   use_package_module_(Pkg,Module),
