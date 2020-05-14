@@ -111,7 +111,7 @@ rospl_run_tests(Pkg:Module, Opts) :-
 rospl_run_tests(Pkg, Opts) :-
   atom(Pkg),
   ros_package_path(Pkg,PkgPath),
-  atom_concat(PkgPath, '/prolog/', PlPath),
+  atom_concat(PkgPath, '/src/', PlPath),
   exists_directory(PlPath),
   rospl_run_tests_in_dir_(Pkg,PlPath,PlPath,Opts),
   !.
