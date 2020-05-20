@@ -62,8 +62,12 @@ add_library(rosprolog_kb
 	src/rosprolog_kb/tf.cpp
 	src/rosprolog_node/PrologEngine.cpp
 	src/rosprolog_node/PrologPool.cpp)
-add_dependencies(rosprolog_kb rosprolog_generate_messages_cpp)
-target_link_libraries(rosprolog_kb ${SWIPL_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(rosprolog_kb
+    ${SWIPL_LIBRARIES} ${catkin_LIBRARIES})
+add_dependencies(rosprolog_kb
+    ${${PROJECT_NAME}_EXPORTED_TARGETS}
+    ${catkin_EXPORTED_TARGETS},
+    rosprolog_generate_messages_cpp)
 
 ######
 add_executable(rosprolog_node
