@@ -16,16 +16,15 @@ rosprolog packages are normal ROS packages that, in addition,
 contain some special files and folders.
 This common structure allows to automatically load the package and all its dependencies. 
 
-    your_package
+    my_package
     |- package.xml
     |- CMakeLists.txt
-    |- owl
-       |- your_ontology.owl
-    |- prolog
-       |- init.pl
-       |- your_package
-          |- your_module.pl
-          |- your_module.plt
+    |- rdf
+       |- my_ontology.rdf
+    |- src
+       |- __init__.pl
+       |- my_module.pl
+       |- my_module.plt
 
 ### rosprolog console
 
@@ -34,7 +33,7 @@ To run rosprolog, use:
     rosrun rosprolog rosprolog
 
  
-To start a prolog package within rosprolog (incl. calling its init.pl file and all init.pl of referenced packages), use:
+To start a prolog package within rosprolog (incl. calling its __init__.pl file and all __init__.pl of referenced packages), use:
 
     rosrun rosprolog rosprolog <pkgname>
 

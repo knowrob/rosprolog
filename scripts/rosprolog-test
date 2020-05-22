@@ -1,8 +1,8 @@
 #!/bin/sh
 
 PL_ARGS=$@
-PL_INIT_FILE=$(rospack find rosprolog)/prolog/init.pl
-ROSTEST_FILE=$(rospack find rosprolog)/prolog/rostest.pl
+PL_INIT_FILE=$(rospack find rosprolog)/src/__init__.pl
+ROSTEST_FILE=$(rospack find rosprolog)/src/rostest.pl
 
 # A POSIX variable
 OPTIND=1 # Reset in case getopts has been used previously in the shell.

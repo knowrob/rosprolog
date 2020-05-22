@@ -47,7 +47,7 @@ class JSONNode(object):
     
     def unsubscribe(self,msg_data):
         try:
-	    topic_name = msg_data['topic_name']
+            topic_name = msg_data['topic_name']
             subscriber = self.ros_subscriber[topic_name]
             subscriber.unregister()
             del self.ros_subscriber[topic_name]
