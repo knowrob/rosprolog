@@ -66,7 +66,7 @@ target_link_libraries(rosprolog_kb
     ${SWIPL_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(rosprolog_kb
     ${${PROJECT_NAME}_EXPORTED_TARGETS}
-    ${catkin_EXPORTED_TARGETS},
+    ${catkin_EXPORTED_TARGETS}
     rosprolog_generate_messages_cpp)
 
 ######
