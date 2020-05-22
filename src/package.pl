@@ -39,13 +39,9 @@ register_ros_package(Package, _) :-
   ros_package_initialized(Package), !.
 
 register_ros_package(Package, AbsoluteDirectory) :-
-
-print_message(informational, rosprolog(pkg1(Package))),
   ros_package_path(Package, PackagePath),
-print_message(informational, rosprolog(pkg2(PackagePath))),
   nonvar(PackagePath),
   atom_concat(PackagePath, '/src/', AbsoluteDirectory),
-print_message(informational, rosprolog(pkg3(AbsoluteDirectory))),
   asserta(user:library_directory(AbsoluteDirectory)),
   assert(user:file_search_path(ros, AbsoluteDirectory)),
   assert(ros_package_initialized(Package)),
