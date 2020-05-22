@@ -57,6 +57,8 @@
 
 :- dynamic rosprolog_subscriber/2.
 
+% TODO: support any term here, then use portray or similar
+%          to format it!
 user:message_hook(format(X,Args), error, _)         :- ros_message_hook(X,Args,ros_error).
 user:message_hook(format(X,Args), warning, -)       :- ros_message_hook(X,Args,ros_warn).
 user:message_hook(format(X,Args), informational, _) :- ros_message_hook(X,Args,ros_info).
