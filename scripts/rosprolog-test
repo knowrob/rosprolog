@@ -22,8 +22,9 @@ shift $((OPTIND-1))
 
 for target in "$@"
 do
+    echo "Running tests for target: $target..."
     /usr/bin/swipl -q \
         -f ${PL_INIT_FILE} \
         -g "ensure_loaded('${PL_INIT_FILE}'),ensure_loaded('${ROSTEST_FILE}')" \
-        -t "setup_call_cleanup(true, rospl_run_tests(${target},[${opts}]), halt)"
+        -t "setup_call_cleanup(true, rospl_run_tests('${target}',[${opts}]), halt)"
 done

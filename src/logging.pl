@@ -1,7 +1,7 @@
 :- module(roslogging,
     []).
 
-:- use_module(library(lists), [ member/2 ]).
+:- use_module(library(lists), [ member/2, append/2 ]).
 
 %%
 ros_message_format(debug(Topic,Term),Msg) :-
@@ -22,19 +22,36 @@ ros_message_format(Term,Atom) :-
 
 %%
 ros_message_hook(Predicate,Term) :-
+	prolog_load_context(module,Module),
     ros_message_format(Term,Msg),
-    call(Predicate,Msg).
+    atomic_list_concat(['[',Module,'] ',Msg],'',Msg0),
+    call(Predicate,Msg0).
+
+%%
+ros_message_hook(_, Level, [X|Xs]) :-
+	%%
+	findall(Format0, (
+	    member(Entry,[X|Xs]),
+	    once(( Entry=Format0-_ ; Entry=Format0 ))
+	), Formats),
+	Formats \= [],
+	atomic_list_concat(Formats, ' ', Format),
+	%%
+	findall(Args0, member(_-Args0,[X|Xs]), ArgsList),
+	append(ArgsList,Args),
+	%%
+	user:message_hook(format(Format,Args), Level, []),
+	!.
+ros_message_hook(Term, error, _)         :- ros_message_hook(ros_error,Term).
+ros_message_hook(Term, warning, _)       :- ros_message_hook(ros_warn,Term).
+ros_message_hook(Term, informational, _) :- ros_message_hook(ros_info,Term).
+ros_message_hook(Term, debug(Topic), _)  :- ros_message_hook(ros_debug,debug(Topic,Term)).
 
 %%
 % define message_hook clauses to pass pl messages to ROS system.
 %
-user:message_hook(_, Level, [X|Xs]) :-
-	forall(
-		member(Format-Args,[X|Xs]),
-		user:message_hook(format(Format,Args), Level, [])
-	),!.
-user:message_hook(Term, error, _)         :- ros_message_hook(ros_error,Term).
-user:message_hook(Term, warning, _)       :- ros_message_hook(ros_warn,Term).
-user:message_hook(Term, informational, _) :- ros_message_hook(ros_info,Term).
-user:message_hook(Term, debug(Topic), _)  :- ros_message_hook(ros_debug,debug(Topic,Term)).
+user:message_hook(Term, Level, Lines) :-
+	%% rostest intercepts these messages
+	Term \= plunit(_),
+	ros_message_hook(Term, Level, Lines).
 
