@@ -45,7 +45,7 @@ plunit_message_hook(failed(Unit, Name, _Line, Error)) :-
 	% the scope of *run_tests*.
 	out_stream_(OS),
 	with_error_to_(OS,
-		print_message(error,test_failed(Unit, Name, Error))),
+		print_message(warning,test_failed(Unit, Name, Error))),
 	assertz(test_case_failure(Unit,Name,Error)).
 plunit_message_hook(nondet(_,_,Name)) :-
 	print_message(warning,test_nondet(Name)).
