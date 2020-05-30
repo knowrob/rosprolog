@@ -22,9 +22,10 @@ ros_message_format(Term,Atom) :-
 
 %%
 ros_message_hook(Predicate,Term) :-
-	prolog_load_context(module,Module),
+	source_location(FilePath,Line),
+	file_base_name(FilePath,File),
     ros_message_format(Term,Msg),
-    atomic_list_concat(['[',Module,'] ',Msg],'',Msg0),
+    atomic_list_concat([Msg,' (',File,':',Line,')'],'',Msg0),
     call(Predicate,Msg0).
 
 %%
