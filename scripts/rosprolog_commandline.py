@@ -89,7 +89,7 @@ class PQ(object):
         try:
             while not rospy.is_shutdown():
                 cmd = raw_input('?- ')
-                if cmd == 'quit.':
+                if cmd == 'quit.' or cmd == 'halt.':
                     break
                 elif cmd == '':
                     continue
