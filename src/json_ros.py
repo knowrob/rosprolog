@@ -47,7 +47,7 @@ class JSONNode(object):
     
     def unsubscribe(self,msg_data):
         try:
-            topic_name = msg_data['topic_name']
+	    topic_name = msg_data['topic_name']
             subscriber = self.ros_subscriber[topic_name]
             subscriber.unregister()
             del self.ros_subscriber[topic_name]
@@ -164,24 +164,13 @@ class JSONNode(object):
         if type_path.startswith('array('):
             return False
         return not self.is_primitive_type(type_path)
-
-    def is_string_type(self,type_path):
-        return type_path in ['string','array(string)']
     
     #######################
     ######### Decoding JSON into ROS messages
     
     def decode_json_value(self, type_path, value):
-        if self.is_primitive_type(type_path):
-            if self.is_string_type(type_path):
-                return value.encode('utf-8')
-            else:
-                return value
-        elif self.is_primitive_array_type(type_path):
-            if self.is_string_type(type_path):
-                return list(map(lambda x: x.encode('utf-8'), value))
-            else:
-                return value
+        if self.is_primitive_type(type_path) or self.is_primitive_array_type(type_path):
+            return value
         elif self.is_message_array_type(type_path):
             element_type = type_path[6:-1]
             return self.decode_json_message_array(element_type, value)

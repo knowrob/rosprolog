@@ -1,11 +1,12 @@
 #!/bin/bash
 
 PL_ARGS=$@
-PL_INIT_FILE=$(rospack find rosprolog)/src/__init__.pl
+PL_INIT_FILE=$(rospack find rosprolog)/prolog/init.pl
 SCRIPT_FILE=""
 
 if [ -n "$1" ] && [ -n "$(rospack find $1)" ]; then
-    if [ -f $(rospack find $1)/src/__init__.pl ]; then
+
+    if [ -f $(rospack find $1)/prolog/init.pl ]; then
         SCRIPT_FILE="-g register_ros_package($1)"
     fi
     PL_ARGS=${@:1}

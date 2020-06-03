@@ -31,8 +31,8 @@ PrologNode::PrologNode(ros::NodeHandle *node)
 			return;
 		}
 	}
-	else if(!call1("register_ros_package","knowrob")) {
-		ROS_ERROR("Failed to load knowrob.");
+	else if(!call1("register_ros_package","knowrob_common")) {
+		ROS_ERROR("Failed to load knowrob_common.");
 		return;
 	}
 	// execute initial goal
@@ -85,9 +85,9 @@ int PrologNode::call1(const std::string &p, const std::string &arg1)
 int PrologNode::ensure_loaded(const char *ros_pkg)
 {
 	std::stringstream ss;
-	ss << ros::package::getPath(ros_pkg) << "/src/__init__.pl";
+	ss << ros::package::getPath(ros_pkg) << "/prolog/init.pl";
 	if(!call1("ensure_loaded",ss.str())) {
-		ROS_ERROR("Failed to load __init__.pl of %s.", ros_pkg);
+		ROS_ERROR("Failed to load init.pl of %s.", ros_pkg);
 		return FALSE;
 	}
 	return TRUE;

@@ -1,6 +1,6 @@
 <launch>
   <arg name="initial_package" default="rosprolog" />
-  <arg name="initial_goal" default="true" />
+  <arg name="initial_goal" default="use_module(library('semweb/rdf_db'))" />
   <arg name="num_pl_threads" default="2" />
   <arg name="num_ros_threads" default="4" />
   
