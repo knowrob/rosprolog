@@ -22,11 +22,15 @@ ros_message_format(Term,Atom) :-
 
 %%
 ros_message_hook(Predicate,Term) :-
-	source_location(FilePath,Line),
+	source_location(FilePath,Line),!,
 	file_base_name(FilePath,File),
-    ros_message_format(Term,Msg),
-    atomic_list_concat([Msg,' (',File,':',Line,')'],'',Msg0),
-    call(Predicate,Msg0).
+	ros_message_format(Term,Msg),
+	atomic_list_concat([Msg,' (',File,':',Line,')'],'',Msg0),
+	call(Predicate,Msg0).
+
+ros_message_hook(Predicate,Term) :-
+	ros_message_format(Term,Msg),
+	call(Predicate,Msg).
 
 %%
 ros_message_hook(_, Level, [X|Xs]) :-
