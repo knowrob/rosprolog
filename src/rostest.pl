@@ -1,5 +1,9 @@
 :- module(rostest,
-    [ rospl_run_tests/2
+    [ rospl_run_tests/2,
+      assert_true/1,
+      assert_false/1,
+      assert_equals/2,
+      assert_unifies/2
     ]).
 /** <module> Run plunit tests in the scope of a ROS workspace.
 
@@ -7,6 +11,7 @@
 @license BSD
 */
 
+:- use_module(library('semweb/rdf_db'), [ rdf_meta/1 ]).
 :- use_module(library(plunit)).
 :- expects_dialect(sicstus). % for use_module/3
 
@@ -16,6 +21,48 @@
            test_case_end/3,
            test_case_failure/3,
            out_stream_/1.
+
+:- rdf_meta((
+		assert_true(t),
+		assert_false(t),
+		assert_equals(t,t),
+		assert_unifies(t,t))).
+
+%% assert_true(+Goal) is det.
+%
+% Assert that Goal holds.
+% Supposed to be used withing unit tests.
+%
+% @param Goal the goal to be tested.
+%
+assert_true(Goal) :- assertion(Goal).
+
+%% assert_false(+Goal) is det.
+%
+% Assert that Goal does not hold.
+% Supposed to be used withing unit tests.
+%
+% @param Goal the goal to be tested.
+%
+assert_false(Goal) :- assertion(\+ Goal).
+
+%% assert_equals(+A,+B) is det.
+%
+% Assert that A and B are instantited to the same value.
+% Supposed to be used withing unit tests.
+%
+% @param Goal the goal to be tested.
+%
+assert_equals(A,B) :- assertion(A == B).
+
+%% assert_unifies(+A,+B) is det.
+%
+% Assert that A and B can be unified.
+% Supposed to be used withing unit tests.
+%
+% @param Goal the goal to be tested.
+%
+assert_unifies(A,B) :- assertion(A = B).
 
 %% pretty print some messages
 prolog:message(test_failed(Unit, Name, Error)) -->
