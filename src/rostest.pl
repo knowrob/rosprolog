@@ -47,6 +47,14 @@ plunit_message_hook(failed(Unit, Name, _Line, Error)) :-
 	with_error_to_(OS,
 		print_message(warning,test_failed(Unit, Name, Error))),
 	assertz(test_case_failure(Unit,Name,Error)).
+plunit_message_hook(failed_assertion(Unit, Name, _Line, _Error, _STO, Reason, Goal)) :-
+	% need to select the output stream for print_message explicitely in the
+	% the scope of *run_tests*.
+	out_stream_(OS),
+	Error=failed_assertion(Reason,Goal),
+	with_error_to_(OS,
+		print_message(warning,test_failed(Unit, Name, Error))),
+	assertz(test_case_failure(Unit,Name,Error)).
 plunit_message_hook(nondet(_,_,Name)) :-
 	print_message(warning,test_nondet(Name)).
 
@@ -206,13 +214,15 @@ xunit_term_(Module, element(testsuite,
 	findall(X1, (
 		test_case_failure(Module,X1,Failure),
 		xunit_is_failure_(Failure)
-	), Failures),
+	), Failures0),
+	list_to_set(Failures0,Failures),
 	length(Failures,NumFailures),
 	%%
 	findall(X2, (
 		test_case_failure(Module,X2,Err),
 		xunit_is_error_(Err)
-	), Errors),
+	), Errors0),
+	list_to_set(Errors0,Errors),
 	length(Errors,NumErrors),
 	%%
 	findall(TestTerm, (
