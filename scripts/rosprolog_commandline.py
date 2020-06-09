@@ -3,6 +3,8 @@ import re
 import os
 import traceback
 
+from builtins import input
+
 import rospy
 import readline
 import sys
@@ -88,7 +90,7 @@ class PQ(object):
     def start_commandline(self):
         try:
             while not rospy.is_shutdown():
-                cmd = raw_input('?- ')
+                cmd = input('?- ')
                 if cmd == 'quit.' or cmd == 'halt.':
                     break
                 elif cmd == '':
