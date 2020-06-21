@@ -25,6 +25,6 @@ do
     echo "Running tests for target: $target..."
     /usr/bin/swipl -q \
         -f ${PL_INIT_FILE} \
-        -g "ensure_loaded('${PL_INIT_FILE}'),ensure_loaded('${ROSTEST_FILE}')" \
+        -g "ensure_loaded('${PL_INIT_FILE}'),ensure_loaded('${ROSTEST_FILE}'),ros_logger_level(warn)" \
         -t "setup_call_cleanup(true, rospl_run_tests('${target}',[${opts}]), halt)"
 done
