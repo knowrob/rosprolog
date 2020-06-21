@@ -1,7 +1,20 @@
 :- module(roslogging,
-    []).
+    [ ros_logger_level/1
+    ]).
 
 :- use_module(library(lists), [ member/2, append/2 ]).
+
+%%
+% Set the console logging level for ROS logging commands.
+% This is e.g. useful to supress console messages when
+% running unit tests.
+%
+ros_logger_level(debug) :- !, ros_set_logger_level(0).
+ros_logger_level(info)  :- !, ros_set_logger_level(1).
+ros_logger_level(warn)  :- !, ros_set_logger_level(2).
+ros_logger_level(error) :- !, ros_set_logger_level(3).
+ros_logger_level(fatal) :- !, ros_set_logger_level(4).
+ros_logger_level(none)  :- !, ros_set_logger_level(5).
 
 %%
 ros_message_format(debug(Topic,Term),Msg) :-
