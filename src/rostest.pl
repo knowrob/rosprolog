@@ -113,6 +113,18 @@ unpack_test_(Test,Test) :- !.
 is_plt_file(File) :-
 	file_name_extension(_, plt, File).
 
+%%
+has_test_file(File) :-
+	file_name_extension(X, pl, File),
+	file_name_extension(X, plt, File0),
+	exists_file(File0).
+
+%%
+is_pl_test_file(File) :-
+	file_name_extension(_, pl, File),
+	\+ has_test_file(File),
+	\+ file_base_name(File, '__init__.pl').
+
 %% rospl_run_tests(+Target, +Opts) is det.
 %
 % Runs tests corresponding to Target.
@@ -154,6 +166,7 @@ run_tests_(Directory,Opts) :-
 		( atomic_list_concat([Directory,Entry],'/',Child),
 			( exists_directory(Child) -> run_tests_(Child,Opts)
 			; is_plt_file(Child)      -> run_test_(Child,Opts)
+			; is_pl_test_file(Child)  -> run_test_(Child,Opts)
 			; true )
 		)
 	).
@@ -181,12 +194,25 @@ run_test_(ModuleFile, Opts) :-
 	catch(
 		run_test__(ModuleFile, Opts),
 		Error,
-		print_message(error,test_failed(ModuleFile, '*', Error))
+		once(
+			( Error=error(existence_error(unit_test,_),_)
+			; Error=error(permission_error(load,source,_),_)
+			; print_message(error,test_failed(ModuleFile, '*', Error))
+			)
+		)
 	).
 
 run_test__(ModuleFile, Opts) :-
-	% load files
+	% call use_module in case the file was not loaded before.
+	% this is important for modules that are not auto-loaded in
+	% the __init__.pl of the package.
+	( source_file(ModuleFile)
+	-> true
+	;  use_module(ModuleFile)
+	),
+	% get the module name
 	use_module(Module,ModuleFile,[]),
+	% load plt file if any
 	load_test_files(_),
 	% remember old user output
 	stream_property(OldOut, alias(user_output)),
@@ -236,7 +262,11 @@ test_report_(Module,Opts) :-
 	member(report,Opts),
 	xunit_term_(Module,element(testsuite,Args,_Body)),
 	X=..[test_report|Args],
-	print_message(informational,X).
+	print_message(informational,X),
+	% force printing report to console
+	phrase(prolog:message(X), [MsgPattern-MsgArgs]),
+	format(atom(MsgAtom),MsgPattern,MsgArgs),
+	writeln(MsgAtom).
 
 %%
 test_report_xunit_(Module,File) :-
