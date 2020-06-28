@@ -2,7 +2,7 @@
 
 PL_ARGS=$@
 PL_INIT_FILE=$(rospack find rosprolog)/src/__init__.pl
-PLDOC_INIT_FILE=$(rospack find rosprolog)/src/pldoc.pl
+PLDOC_INIT_FILE=$(rospack find rosprolog)/src/rosprolog_doc.pl
 SCRIPT_FILE=""
 
 if [ -n "$1" ] && [ -n "$(rospack find $1)" ]; then
