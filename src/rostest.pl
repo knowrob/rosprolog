@@ -144,14 +144,27 @@ rospl_run_tests(Target, _Opts) :-
 	throw(invalid_argument(rospl_run_tests,Target)).
 
 rospl_run_tests(Target, Opts) :-
+	%% run test and report
+	setup_call_cleanup(
+		%% setup
+		true,
+		%% call
+		( rospl_run_tests1(Target,Opts)
+		, forall(test_report_(Opts),true)
+		),
+		%% cleanup
+		( test_suite_retract_ )
+	).
+
+rospl_run_tests1(Target, Opts) :-
 	exists_file(Target),!,
 	run_tests_(Target,Opts).
 
-rospl_run_tests(Target,Opts) :-
+rospl_run_tests1(Target,Opts) :-
 	exists_directory(Target),!,
 	run_tests_(Target,Opts).
 
-rospl_run_tests(Target, Opts) :-
+rospl_run_tests1(Target, Opts) :-
 	ros_package_path(Target,PkgPath),!,
 	atom_concat(PkgPath, '/src/', PlPath),
 	exists_directory(PlPath),
@@ -202,7 +215,7 @@ run_test_(ModuleFile, Opts) :-
 		)
 	).
 
-run_test__(ModuleFile, Opts) :-
+run_test__(ModuleFile, _Opts) :-
 	% call use_module in case the file was not loaded before.
 	% this is important for modules that are not auto-loaded in
 	% the __init__.pl of the package.
@@ -218,17 +231,8 @@ run_test__(ModuleFile, Opts) :-
 	stream_property(OldOut, alias(user_output)),
 	retractall(out_stream_(_)),
 	assertz(out_stream_(OldOut)),
-	%% run test and report
-	setup_call_cleanup(
-		%% setup
-		true,
-		%% call
-		( ignore(run_tests([Module]))
-		, forall(test_report_(Module,Opts),true)
-	 	),
-	 	%% cleanup
-	 	( test_suite_retract_(Module) )
-	).
+	ignore(run_tests([Module])),
+	test_report_console_(Module).
 
 %%
 get_package_path_(Directory,PkgPath) :-
@@ -239,12 +243,12 @@ get_package_path_(Directory,PkgPath) :-
 	atomic_list_concat(X,'/',PkgPath),!.
 
 %% retract dynamic facts
-test_suite_retract_(Module) :-
-	retractall(test_suite_begin(Module,_)),
-	retractall(test_suite_end(Module,_)),
-	retractall(test_case_begin(Module,_,_)),
-	retractall(test_case_end(Module,_,_)),
-	retractall(test_case_failure(Module,_,_)).
+test_suite_retract_ :-
+	retractall(test_suite_begin(_,_)),
+	retractall(test_suite_end(_,_)),
+	retractall(test_case_begin(_,_,_)),
+	retractall(test_case_end(_,_,_)),
+	retractall(test_case_failure(_,_,_)).
 
 %% make a call but redirect *user_error* to another stream.
 with_error_to_(Stream,Goal) :-
@@ -254,12 +258,11 @@ with_error_to_(Stream,Goal) :-
 	set_stream(OldErr, alias(user_error)).
 
 %%
-test_report_(Module,Opts) :-
+test_report_(Opts) :-
 	member(xunit(File),Opts),
-	test_report_xunit_(Module,File).
+	test_report_xunit_(File).
 
-test_report_(Module,Opts) :-
-	member(report,Opts),
+test_report_console_(Module) :-
 	xunit_term_(Module,element(testsuite,Args,_Body)),
 	X=..[test_report|Args],
 	print_message(informational,X),
@@ -269,11 +272,50 @@ test_report_(Module,Opts) :-
 	writeln(MsgAtom).
 
 %%
-test_report_xunit_(Module,File) :-
-	xunit_term_(Module,Term),
+test_report_xunit_(File) :-
+	findall(Term,
+		xunit_term_(_,Term),
+		Terms
+	),
+	test_report_num_tests(Terms,NumTests),
+	test_report_num_failures(Terms,NumFailures),
+	test_report_time(Terms,TimeTotal),
 	open(File,write,Stream), 
-	xml_write(Stream, [Term], [layout(true)]),
+	xml_write(Stream,
+		element(testsuites,
+			[ name='plunit',
+			  tests=NumTests,
+			  failures=NumFailures,
+			  time=TimeTotal
+			],
+			Terms
+		),
+		[layout(true)]),
 	close(Stream).
+
+%%
+test_report_num_tests([],0) :- !.
+test_report_num_tests([X|Xs],Count) :-
+	X=element(testsuite,Args,_),
+	member((=(tests,Count0)),Args),
+	test_report_num_tests(Xs,Count1),
+	Count is Count0 + Count1.
+
+%%
+test_report_num_failures([],0) :- !.
+test_report_num_failures([X|Xs],Count) :-
+	X=element(testsuite,Args,_),
+	member((=(failures,Count0)),Args),
+	test_report_num_failures(Xs,Count1),
+	Count is Count0 + Count1.
+
+%%
+test_report_time([],0.0) :- !.
+test_report_time([X|Xs],Time) :-
+	X=element(testsuite,Args,_),
+	member((=(time,Time0)),Args),
+	test_report_time(Xs,Time1),
+	Time is Time0 + Time1.
 
 % XUnit term generator
 xunit_term_(Module, element(testsuite,
