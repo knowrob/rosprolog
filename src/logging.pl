@@ -3,6 +3,8 @@
     ]).
 
 :- use_module(library(lists), [ member/2, append/2 ]).
+% Workaround: See https://github.com/SWI-Prolog/swipl-devel/issues/621
+:- append([], _).
 
 %%
 % Set the console logging level for ROS logging commands.
