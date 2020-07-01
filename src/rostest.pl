@@ -232,7 +232,7 @@ run_test__(ModuleFile, _Opts) :-
 	retractall(out_stream_(_)),
 	assertz(out_stream_(OldOut)),
 	ignore(run_tests([Module])),
-	test_report_console_(Module).
+	ignore(test_report_console_(Module)).
 
 %%
 get_package_path_(Directory,PkgPath) :-
@@ -329,6 +329,7 @@ xunit_term_(Module, element(testsuite,
 	%%
 	findall(X0, test_case_begin(Module,X0,_,_,_), TestCases),
 	length(TestCases,NumTests),
+	NumTests > 0,
 	%%
 	findall(X1, (
 		test_case_failure(Module,X1,Failure),
