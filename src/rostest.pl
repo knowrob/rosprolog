@@ -17,7 +17,7 @@
 
 :- dynamic test_suite_begin/2,
            test_suite_end/2,
-           test_case_begin/3,
+           test_case_begin/5,
            test_case_end/3,
            test_case_failure/3,
            out_stream_/1.
@@ -81,9 +81,9 @@ plunit_message_hook(begin(Unit)) :-
 	get_time(Time), assertz(test_suite_begin(Unit,Time)).
 plunit_message_hook(end(Unit)) :-
 	get_time(Time), assertz(test_suite_end(Unit,Time)).
-plunit_message_hook(begin(Unit:Test, _File:_Line, _STO)) :-
+plunit_message_hook(begin(Unit:Test, File:Line, _STO)) :-
 	unpack_test_(Test,TestA),
-	get_time(Time), assertz(test_case_begin(Unit,TestA,Time)).
+	get_time(Time), assertz(test_case_begin(Unit,TestA,Time,File,Line)).
 plunit_message_hook(end(Unit:Test, _File:_Line, _STO)) :-
 	unpack_test_(Test,TestA),
 	get_time(Time), assertz(test_case_end(Unit,TestA,Time)).
@@ -246,7 +246,7 @@ get_package_path_(Directory,PkgPath) :-
 test_suite_retract_ :-
 	retractall(test_suite_begin(_,_)),
 	retractall(test_suite_end(_,_)),
-	retractall(test_case_begin(_,_,_)),
+	retractall(test_case_begin(_,_,_,_,_)),
 	retractall(test_case_end(_,_,_)),
 	retractall(test_case_failure(_,_,_)).
 
@@ -327,7 +327,7 @@ xunit_term_(Module, element(testsuite,
 	test_suite_end(Module,T1),
 	TestTime is T1 - T0,
 	%%
-	findall(X0, test_case_begin(Module,X0,_), TestCases),
+	findall(X0, test_case_begin(Module,X0,_,_,_), TestCases),
 	length(TestCases,NumTests),
 	%%
 	findall(X1, (
@@ -351,10 +351,10 @@ xunit_term_(Module, element(testsuite,
 
 xunit_test_term_(Module,TestCase,
 	element(testcase,
-		[ name=TestCase, time=TestTime ],
+		[ name=TestCase, file=File, line=Line, time=TestTime ],
 		FailureTerms)) :-
 	%%
-	test_case_begin(Module,TestCase,T0),
+	test_case_begin(Module,TestCase,T0,File,Line),
 	test_case_end(Module,TestCase,T1),
 	TestTime is T1 - T0,
 	%%
