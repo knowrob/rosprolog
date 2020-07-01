@@ -371,12 +371,21 @@ xunit_is_error_(X) :- \+ xunit_is_failure_(X).
 
 %%
 xunit_failure_term_(failed,
-	element(failure, [ type=failed, message='goal failed' ], [])) :- !.
+	element(failure, [ type=failed, message=Msg ], [Txt])) :-
+	Msg='goal failed',
+	Txt=Msg,
+	!.
 
 xunit_failure_term_(succeeded(_),
-	element(failure, [ type=failed,
-	message='goal succeeded but should have failed' ], [])) :- !.
+	element(failure, [ type=failed, message=Msg ], [Txt])) :-
+	Msg='goal succeeded but should have failed',
+	Txt=Msg,
+	!.
 
 xunit_failure_term_(Error,
-	element(error, [ type=exception, message=Msg ], [])) :-
-	atom(Error) -> Msg = Error ; term_to_atom(Error,Msg).
+	element(error, [ type=exception, message=Msg ], [Txt])) :-
+	( atom(Error)
+	-> Msg = Error
+	;  term_to_atom(Error,Msg)
+	),
+	Txt=Msg.
