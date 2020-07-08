@@ -383,7 +383,7 @@ xunit_failure_term_(succeeded(_),
 	!.
 
 xunit_failure_term_(Error,
-	element(error, [ type=exception, message=Msg ], [Txt])) :-
+	element(failure, [ type=error, message=Msg ], [Txt])) :-
 	( atom(Error)
 	-> Msg = Error
 	;  term_to_atom(Error,Msg)
