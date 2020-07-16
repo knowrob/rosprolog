@@ -94,14 +94,21 @@ plunit_message_hook(failed(Unit, Name, _Line, Error)) :-
 	with_error_to_(OS,
 		print_message(warning,test_failed(Unit, Name, Error))),
 	assertz(test_case_failure(Unit,Name,Error)).
-plunit_message_hook(failed_assertion(Unit, Name, _Line, _Error, _STO, Reason, Goal)) :-
-	% need to select the output stream for print_message explicitely in the
-	% the scope of *run_tests*.
-	out_stream_(OS),
-	Error=failed_assertion(Reason,Goal),
-	with_error_to_(OS,
-		print_message(warning,test_failed(Unit, Name, Error))),
-	assertz(test_case_failure(Unit,Name,Error)).
+plunit_message_hook(failed_assertion(Unit, Name, Line, _Error, _STO, Reason, Goal)) :-
+	% get test options
+	current_unit(Unit, Module, _Supers, _UnitOptions),
+	Module:'unit test'(Name, Line, Options, _Body),
+	% ignore in case fixme option is defined
+	(	\+ option(fixme(_), Options)
+	;	(
+		% need to select the output stream for print_message explicitely in the
+		% the scope of *run_tests*.
+		out_stream_(OS),
+		Error=failed_assertion(Reason,Goal),
+		with_error_to_(OS,
+			print_message(warning,test_failed(Unit, Name, Error))),
+		assertz(test_case_failure(Unit,Name,Error))
+	)).
 plunit_message_hook(nondet(_,_,Name)) :-
 	print_message(warning,test_nondet(Name)).
 
