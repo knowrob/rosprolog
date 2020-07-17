@@ -1,5 +1,9 @@
 :- module(rostest,
-    [ rospl_run_tests/2
+    [ rospl_run_tests/2,
+      assert_true/1,
+      assert_false/1,
+      assert_equals/2,
+      assert_unifies/2
     ]).
 /** <module> Run plunit tests in the scope of a ROS workspace.
 
@@ -7,15 +11,58 @@
 @license BSD
 */
 
+:- use_module(library('semweb/rdf_db'), [ rdf_meta/1 ]).
 :- use_module(library(plunit)).
 :- expects_dialect(sicstus). % for use_module/3
 
 :- dynamic test_suite_begin/2,
            test_suite_end/2,
-           test_case_begin/3,
+           test_case_begin/5,
            test_case_end/3,
            test_case_failure/3,
            out_stream_/1.
+
+:- rdf_meta((
+		assert_true(t),
+		assert_false(t),
+		assert_equals(t,t),
+		assert_unifies(t,t))).
+
+%% assert_true(+Goal) is det.
+%
+% Assert that Goal holds.
+% Supposed to be used withing unit tests.
+%
+% @param Goal the goal to be tested.
+%
+assert_true(Goal) :- assertion(Goal).
+
+%% assert_false(+Goal) is det.
+%
+% Assert that Goal does not hold.
+% Supposed to be used withing unit tests.
+%
+% @param Goal the goal to be tested.
+%
+assert_false(Goal) :- assertion(\+ Goal).
+
+%% assert_equals(+A,+B) is det.
+%
+% Assert that A and B are instantited to the same value.
+% Supposed to be used withing unit tests.
+%
+% @param Goal the goal to be tested.
+%
+assert_equals(A,B) :- assertion(A == B).
+
+%% assert_unifies(+A,+B) is det.
+%
+% Assert that A and B can be unified.
+% Supposed to be used withing unit tests.
+%
+% @param Goal the goal to be tested.
+%
+assert_unifies(A,B) :- assertion(A = B).
 
 %% pretty print some messages
 prolog:message(test_failed(Unit, Name, Error)) -->
@@ -34,9 +81,9 @@ plunit_message_hook(begin(Unit)) :-
 	get_time(Time), assertz(test_suite_begin(Unit,Time)).
 plunit_message_hook(end(Unit)) :-
 	get_time(Time), assertz(test_suite_end(Unit,Time)).
-plunit_message_hook(begin(Unit:Test, _File:_Line, _STO)) :-
+plunit_message_hook(begin(Unit:Test, File:Line, _STO)) :-
 	unpack_test_(Test,TestA),
-	get_time(Time), assertz(test_case_begin(Unit,TestA,Time)).
+	get_time(Time), assertz(test_case_begin(Unit,TestA,Time,File,Line)).
 plunit_message_hook(end(Unit:Test, _File:_Line, _STO)) :-
 	unpack_test_(Test,TestA),
 	get_time(Time), assertz(test_case_end(Unit,TestA,Time)).
@@ -47,6 +94,21 @@ plunit_message_hook(failed(Unit, Name, _Line, Error)) :-
 	with_error_to_(OS,
 		print_message(warning,test_failed(Unit, Name, Error))),
 	assertz(test_case_failure(Unit,Name,Error)).
+plunit_message_hook(failed_assertion(Unit, Name, Line, _Error, _STO, Reason, Goal)) :-
+	% get test options
+	current_unit(Unit, Module, _Supers, _UnitOptions),
+	Module:'unit test'(Name, Line, Options, _Body),
+	% ignore in case fixme option is defined
+	(	\+ option(fixme(_), Options)
+	;	(
+		% need to select the output stream for print_message explicitely in the
+		% the scope of *run_tests*.
+		out_stream_(OS),
+		Error=failed_assertion(Reason,Goal),
+		with_error_to_(OS,
+			print_message(warning,test_failed(Unit, Name, Error))),
+		assertz(test_case_failure(Unit,Name,Error))
+	)).
 plunit_message_hook(nondet(_,_,Name)) :-
 	print_message(warning,test_nondet(Name)).
 
@@ -57,6 +119,18 @@ unpack_test_(Test,Test) :- !.
 %%
 is_plt_file(File) :-
 	file_name_extension(_, plt, File).
+
+%%
+has_test_file(File) :-
+	file_name_extension(X, pl, File),
+	file_name_extension(X, plt, File0),
+	exists_file(File0).
+
+%%
+is_pl_test_file(File) :-
+	file_name_extension(_, pl, File),
+	\+ has_test_file(File),
+	\+ file_base_name(File, '__init__.pl').
 
 %% rospl_run_tests(+Target, +Opts) is det.
 %
@@ -77,14 +151,27 @@ rospl_run_tests(Target, _Opts) :-
 	throw(invalid_argument(rospl_run_tests,Target)).
 
 rospl_run_tests(Target, Opts) :-
+	%% run test and report
+	setup_call_cleanup(
+		%% setup
+		true,
+		%% call
+		( rospl_run_tests1(Target,Opts)
+		, forall(test_report_(Opts),true)
+		),
+		%% cleanup
+		( test_suite_retract_ )
+	).
+
+rospl_run_tests1(Target, Opts) :-
 	exists_file(Target),!,
 	run_tests_(Target,Opts).
 
-rospl_run_tests(Target,Opts) :-
+rospl_run_tests1(Target,Opts) :-
 	exists_directory(Target),!,
 	run_tests_(Target,Opts).
 
-rospl_run_tests(Target, Opts) :-
+rospl_run_tests1(Target, Opts) :-
 	ros_package_path(Target,PkgPath),!,
 	atom_concat(PkgPath, '/src/', PlPath),
 	exists_directory(PlPath),
@@ -99,6 +186,7 @@ run_tests_(Directory,Opts) :-
 		( atomic_list_concat([Directory,Entry],'/',Child),
 			( exists_directory(Child) -> run_tests_(Child,Opts)
 			; is_plt_file(Child)      -> run_test_(Child,Opts)
+			; is_pl_test_file(Child)  -> run_test_(Child,Opts)
 			; true )
 		)
 	).
@@ -126,28 +214,32 @@ run_test_(ModuleFile, Opts) :-
 	catch(
 		run_test__(ModuleFile, Opts),
 		Error,
-		print_message(error,test_failed(ModuleFile, '*', Error))
+		once(
+			( Error=error(existence_error(unit_test,_),_)
+			; Error=error(permission_error(load,source,_),_)
+			; print_message(error,test_failed(ModuleFile, '*', Error))
+			)
+		)
 	).
 
-run_test__(ModuleFile, Opts) :-
-	% load files
+run_test__(ModuleFile, _Opts) :-
+	% call use_module in case the file was not loaded before.
+	% this is important for modules that are not auto-loaded in
+	% the __init__.pl of the package.
+	( source_file(ModuleFile)
+	-> true
+	;  use_module(ModuleFile)
+	),
+	% get the module name
 	use_module(Module,ModuleFile,[]),
+	% load plt file if any
 	load_test_files(_),
 	% remember old user output
 	stream_property(OldOut, alias(user_output)),
 	retractall(out_stream_(_)),
 	assertz(out_stream_(OldOut)),
-	%% run test and report
-	setup_call_cleanup(
-		%% setup
-		true,
-		%% call
-		( ignore(run_tests([Module]))
-		, forall(test_report_(Module,Opts),true)
-	 	),
-	 	%% cleanup
-	 	( test_suite_retract_(Module) )
-	).
+	ignore(run_tests([Module])),
+	ignore(test_report_console_(Module)).
 
 %%
 get_package_path_(Directory,PkgPath) :-
@@ -158,12 +250,12 @@ get_package_path_(Directory,PkgPath) :-
 	atomic_list_concat(X,'/',PkgPath),!.
 
 %% retract dynamic facts
-test_suite_retract_(Module) :-
-	retractall(test_suite_begin(Module,_)),
-	retractall(test_suite_end(Module,_)),
-	retractall(test_case_begin(Module,_,_)),
-	retractall(test_case_end(Module,_,_)),
-	retractall(test_case_failure(Module,_,_)).
+test_suite_retract_ :-
+	retractall(test_suite_begin(_,_)),
+	retractall(test_suite_end(_,_)),
+	retractall(test_case_begin(_,_,_,_,_)),
+	retractall(test_case_end(_,_,_)),
+	retractall(test_case_failure(_,_,_)).
 
 %% make a call but redirect *user_error* to another stream.
 with_error_to_(Stream,Goal) :-
@@ -173,22 +265,64 @@ with_error_to_(Stream,Goal) :-
 	set_stream(OldErr, alias(user_error)).
 
 %%
-test_report_(Module,Opts) :-
+test_report_(Opts) :-
 	member(xunit(File),Opts),
-	test_report_xunit_(Module,File).
+	test_report_xunit_(File).
 
-test_report_(Module,Opts) :-
-	member(report,Opts),
+test_report_console_(Module) :-
 	xunit_term_(Module,element(testsuite,Args,_Body)),
 	X=..[test_report|Args],
-	print_message(informational,X).
+	print_message(informational,X),
+	% force printing report to console
+	phrase(prolog:message(X), [MsgPattern-MsgArgs]),
+	format(atom(MsgAtom),MsgPattern,MsgArgs),
+	writeln(MsgAtom).
 
 %%
-test_report_xunit_(Module,File) :-
-	xunit_term_(Module,Term),
+test_report_xunit_(File) :-
+	findall(Term,
+		xunit_term_(_,Term),
+		Terms
+	),
+	test_report_num_tests(Terms,NumTests),
+	test_report_num_failures(Terms,NumFailures),
+	test_report_time(Terms,TimeTotal),
 	open(File,write,Stream), 
-	xml_write(Stream, [Term], [layout(true)]),
+	xml_write(Stream,
+		element(testsuites,
+			[ name='plunit',
+			  tests=NumTests,
+			  failures=NumFailures,
+			  time=TimeTotal
+			],
+			Terms
+		),
+		[layout(true)]),
 	close(Stream).
+
+%%
+test_report_num_tests([],0) :- !.
+test_report_num_tests([X|Xs],Count) :-
+	X=element(testsuite,Args,_),
+	member((=(tests,Count0)),Args),
+	test_report_num_tests(Xs,Count1),
+	Count is Count0 + Count1.
+
+%%
+test_report_num_failures([],0) :- !.
+test_report_num_failures([X|Xs],Count) :-
+	X=element(testsuite,Args,_),
+	member((=(failures,Count0)),Args),
+	test_report_num_failures(Xs,Count1),
+	Count is Count0 + Count1.
+
+%%
+test_report_time([],0.0) :- !.
+test_report_time([X|Xs],Time) :-
+	X=element(testsuite,Args,_),
+	member((=(time,Time0)),Args),
+	test_report_time(Xs,Time1),
+	Time is Time0 + Time1.
 
 % XUnit term generator
 xunit_term_(Module, element(testsuite,
@@ -200,19 +334,22 @@ xunit_term_(Module, element(testsuite,
 	test_suite_end(Module,T1),
 	TestTime is T1 - T0,
 	%%
-	findall(X0, test_case_begin(Module,X0,_), TestCases),
+	findall(X0, test_case_begin(Module,X0,_,_,_), TestCases),
 	length(TestCases,NumTests),
+	NumTests > 0,
 	%%
 	findall(X1, (
 		test_case_failure(Module,X1,Failure),
 		xunit_is_failure_(Failure)
-	), Failures),
+	), Failures0),
+	list_to_set(Failures0,Failures),
 	length(Failures,NumFailures),
 	%%
 	findall(X2, (
 		test_case_failure(Module,X2,Err),
 		xunit_is_error_(Err)
-	), Errors),
+	), Errors0),
+	list_to_set(Errors0,Errors),
 	length(Errors,NumErrors),
 	%%
 	findall(TestTerm, (
@@ -222,10 +359,10 @@ xunit_term_(Module, element(testsuite,
 
 xunit_test_term_(Module,TestCase,
 	element(testcase,
-		[ name=TestCase, time=TestTime ],
+		[ name=TestCase, file=File, line=Line, time=TestTime ],
 		FailureTerms)) :-
 	%%
-	test_case_begin(Module,TestCase,T0),
+	test_case_begin(Module,TestCase,T0,File,Line),
 	test_case_end(Module,TestCase,T1),
 	TestTime is T1 - T0,
 	%%
@@ -241,12 +378,21 @@ xunit_is_error_(X) :- \+ xunit_is_failure_(X).
 
 %%
 xunit_failure_term_(failed,
-	element(failure, [ type=failed, message='goal failed' ], [])) :- !.
+	element(failure, [ type=failed, message=Msg ], [Txt])) :-
+	Msg='goal failed',
+	Txt=Msg,
+	!.
 
 xunit_failure_term_(succeeded(_),
-	element(failure, [ type=failed,
-	message='goal succeeded but should have failed' ], [])) :- !.
+	element(failure, [ type=failed, message=Msg ], [Txt])) :-
+	Msg='goal succeeded but should have failed',
+	Txt=Msg,
+	!.
 
 xunit_failure_term_(Error,
-	element(error, [ type=exception, message=Msg ], [])) :-
-	atom(Error) -> Msg = Error ; term_to_atom(Error,Msg).
+	element(failure, [ type=error, message=Msg ], [Txt])) :-
+	( atom(Error)
+	-> Msg = Error
+	;  term_to_atom(Error,Msg)
+	),
+	Txt=Msg.

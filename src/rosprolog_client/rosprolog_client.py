@@ -1,5 +1,7 @@
 import json
 
+from future.utils import implements_iterator
+
 import rospy
 from json_prolog_msgs import srv
 
@@ -7,6 +9,16 @@ from json_prolog_msgs import srv
 class PrologException(Exception):
     pass
 
+###
+# NOTE: needed for *next* that works with Python2 and Python3
+@implements_iterator
+class Upper(object):
+    def __init__(self, iterable):
+        self._iter = iter(iterable)
+    def __next__(self):           # Py3-style iterator interface
+        return next(self._iter)   # builtin next() function calls
+    def __iter__(self):
+        return self
 
 class PrologQuery(object):
     def __init__(self, query_str, simple_query_srv, next_solution_srv, finish_srv, iterative=True):
@@ -115,7 +127,7 @@ class Prolog(object):
         try:
             q = PrologQuery(query_str, simple_query_srv=self._simple_query_srv,
                             next_solution_srv=self._next_solution_srv, finish_srv=self._finish_query_srv)
-            return q.solutions().next()
+            return next(Upper(q.solutions()))
         except StopIteration:
             return []
         finally:

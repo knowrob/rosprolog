@@ -47,6 +47,7 @@ you need a way to send queries from your program.
 This functionality is provided by the rosprolog package.
 It provides a service that exposes a Prolog shell via ROS.
 You can run the rosprolog service using a launch file such as the following
+
 ```
 <launch>
   <arg name="initial_package" default="knowrob_common" />

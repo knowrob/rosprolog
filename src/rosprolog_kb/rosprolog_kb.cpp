@@ -5,6 +5,7 @@
 
 #include <ros/ros.h>
 #include <ros/package.h>
+#include <ros/console.h>
 
 /*********************************/
 /********** KBNode ***************/
@@ -93,6 +94,15 @@ PREDICATE(ros_error, 1)
 PREDICATE(ros_debug, 1)
 {
 	ROS_DEBUG("%s", (char*)PL_A1);
+	return TRUE;
+}
+
+PREDICATE(ros_set_logger_level, 1)
+{
+	if(ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Level((int)PL_A1)))
+	{
+		ros::console::notifyLoggerLevelsChanged();
+	}
 	return TRUE;
 }
 
