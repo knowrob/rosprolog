@@ -96,7 +96,7 @@ plunit_message_hook(failed(Unit, Name, _Line, Error)) :-
 	assertz(test_case_failure(Unit,Name,Error)).
 plunit_message_hook(failed_assertion(Unit, Name, Line, _Error, _STO, Reason, Goal)) :-
 	% get test options
-	current_unit(Unit, Module, _Supers, _UnitOptions),
+	plunit:current_unit(Unit, Module, _Supers, _UnitOptions),
 	Module:'unit test'(Name, Line, Options, _Body),
 	% ignore in case fixme option is defined
 	(	\+ option(fixme(_), Options)
