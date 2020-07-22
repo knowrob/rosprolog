@@ -99,7 +99,7 @@ plunit_message_hook(failed_assertion(Unit, Name, Line, _Error, _STO, Reason, Goa
 	plunit:current_unit(Unit, Module, _Supers, _UnitOptions),
 	Module:'unit test'(Name, Line, Options, _Body),
 	% ignore in case fixme option is defined
-	(	\+ option(fixme(_), Options)
+	(	option(fixme(_), Options)
 	;	(
 		% need to select the output stream for print_message explicitely in the
 		% the scope of *run_tests*.
