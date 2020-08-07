@@ -72,6 +72,10 @@ ros_message_hook(Term, debug(Topic), _)  :- ros_message_hook(ros_debug,debug(Top
 %
 user:message_hook(Term, Level, Lines) :-
 	%% rostest intercepts these messages
-	Term \= plunit(_),
+	% FIXME: this is error-prone. it seems generally a bad idea
+	%        to match all terms (except ...) here.
+	Term=..[Functor|_],
+	Functor \= plunit,
+	Functor \= if_tty,
 	ros_message_hook(Term, Level, Lines).
 
