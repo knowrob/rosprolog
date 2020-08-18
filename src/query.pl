@@ -27,6 +27,7 @@ rosprolog_query(Goal, Answer) :-
   % create a dictionary
   findall(Name-JSON_value,
     ( member(Name=Value,Args),
+      not(sub_string(Name,0,1,_,'_')),
       rosprolog_encode(Value,JSON_value)
     ),
     Pairs),
