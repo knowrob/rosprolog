@@ -174,12 +174,12 @@ class JSONNode(object):
     def decode_json_value(self, type_path, value):
         if self.is_primitive_type(type_path):
             if self.is_string_type(type_path):
-                return value.encode('utf-8')
+                return str(value.encode('utf-8'))
             else:
                 return value
         elif self.is_primitive_array_type(type_path):
             if self.is_string_type(type_path):
-                return list(map(lambda x: x.encode('utf-8'), value))
+                return list(map(lambda x: str(x.encode('utf-8')), value))
             else:
                 return value
         elif self.is_message_array_type(type_path):
