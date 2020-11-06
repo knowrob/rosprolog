@@ -121,7 +121,9 @@ class JSONNode(object):
         try:
             publisher = self.ros_pubisher[topic_name]
         except:
-            publisher = rospy.Publisher(topic_name, msg_class, queue_size=10)
+            # NOTE: latch=true is important! else first message might not be received
+            #       by subsribers.
+            publisher = rospy.Publisher(topic_name, msg_class, queue_size=10, latch=True)
             self.ros_pubisher[topic_name] = publisher
         return publisher
     
