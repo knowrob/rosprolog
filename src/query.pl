@@ -38,9 +38,12 @@ rosprolog_query(Goal, Answer) :-
     json_write_dict(current_output, Dict)).
 
 %%
-rosprolog_encode([],[]) :- !.
+rosprolog_encode(EmptyList,[]) :- 
+  ground(EmptyList),
+  EmptyList=[],!.
 
 rosprolog_encode([X|Xs],[Y|Ys]) :-
+  ground(X),ground(Xs),
   rosprolog_encode(X,Y),
   rosprolog_encode(Xs,Ys),!.
 
@@ -55,4 +58,7 @@ rosprolog_encode(Term,_{term: [Functor|Args_json]}) :-
   compound(Term), !,
   Term =.. [Functor|Args_pl],
   rosprolog_encode(Args_pl,Args_json).
+
+rosprolog_encode(Unbound,'_') :-
+  not(ground(Unbound)),!.
   
