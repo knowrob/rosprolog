@@ -39,6 +39,8 @@ class RosRest(Resource):
             self._next_solution_srv.wait_for_service(timeout=timeout)
             rospy.loginfo('{} services ready'.format(name_space))
 
+    # Test call with:
+    # curl --header "Content-Type: application/json"   --request POST   --data '{"query":"has_type(A,B).","id":"1"}'   http://localhost:62226/knowrob/api/v1.0/query
     @app.route('/knowrob/api/v1.0/query', methods=['POST'])
     def query(self):
         request.get_json(force=True)
@@ -50,6 +52,8 @@ class RosRest(Resource):
             return jsonify(sucess=False)
         return jsonify(sucess=True)
 
+    # Test call with:
+    # curl --header "Content-Type: application/json"   --request POST   --data '{"id":"1"}'   http://localhost:62226/knowrob/api/v1.0/query
     @app.route('/knowrob/api/v1.0/next_solution', methods=['GET'])
     def next(self):
         request.get_json(force=True)
