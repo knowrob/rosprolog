@@ -22,7 +22,7 @@ parser = reqparse.RequestParser()
 parser.add_argument('query', type=str)
 parser.add_argument('id', type=int)
 
-class RosRest(Resource):
+class RosprologRestClient:
     def __init__(self, name_space='rosprolog', timeout=None, wait_for_services=True):
         """
         :type name_space: str
@@ -39,64 +39,83 @@ class RosRest(Resource):
             self._next_solution_srv.wait_for_service(timeout=timeout)
             rospy.loginfo('{} services ready'.format(name_space))
 
-    # Test call with:
-    # curl --header "Content-Type: application/json"   --request POST   --data '{"query":"has_type(A,B).","id":"1"}'   http://localhost:62226/knowrob/api/v1.0/query
-    @app.route('/knowrob/api/v1.0/query', methods=['POST'])
-    def query(self):
-        request.get_json(force=True)
-        args = parser.parse_args()
-        query_str = str(args['query'])
-        in_id = str(args['id'])
+    def query(self, in_id, query_str):
         result = self._simple_query_srv(id=in_id, query=query_str, mode=1)
+        rospy.loginfo(str(query_str))
         if not result.ok:
             return jsonify(sucess=False)
         return jsonify(sucess=True)
 
-    # Test call with:
-    # curl --header "Content-Type: application/json"   --request POST   --data '{"id":"1"}'   http://localhost:62226/knowrob/api/v1.0/query
-    @app.route('/knowrob/api/v1.0/next_solution', methods=['GET'])
-    def next(self):
-        request.get_json(force=True)
-        args = parser.parse_args()
-        in_id = str(args['id'])
-        next_solution = self._next_solution_srv(id=self.get_id())
-        if not result.ok:
+    def next(self, in_id):
+        next_solution = self._next_solution_srv(id=in_id)
+        rospy.loginfo(str(next_solution))
+        if not next_solution.status == srv.PrologNextSolutionResponse.OK:
             return jsonify(sucess=False)
-        return json.loads(next_solution)
+        return json.loads(next_solution.solution)
 
-    @app.route('/knowrob/api/v1.0/all_solutions', methods=['GET'])
-    def all(self):
-        request.get_json(force=True)
-        args = parser.parse_args()
-        in_id = str(args['id'])
+    def all(self, in_id):
         solutions = list()
         finished = False
         try:
             while not finished:
-                next_solution = self._next_solution_srv(id=self.get_id())
+                next_solution = self._next_solution_srv(id=in_id)
                 if next_solution.status == srv.PrologNextSolutionResponse.OK:
-                    solutions.append(json.loads(next_solution.solution))
+                    solutions.append(next_solution.solution)
                 elif next_solution.status == srv.PrologNextSolutionResponse.NO_SOLUTION:
                     break
+                else:
+                    return jsonify(sucess=False)
         finally:
-            self.finish()
-        if not result.ok:
-            return jsonify(sucess=False)
-        return json.loads(solutions)
+            self.finish(in_id)
+        return json.dumps(solutions)
 
-    @app.route('/knowrob/api/v1.0/all_solutions', methods=['POST'])
-    def finish(self):
-        request.get_json(force=True)
-        args = parser.parse_args()
-        in_id = str(args['id'])
-        if not self._finished:
-            try:
-                self._finish_query_srv(id=in_id)
-            finally:
-                self._finished = True
+    def finish(self, in_id):
+        self._finish_query_srv(id=in_id)
+        return jsonify(sucess=True)
+
+
+# Test call with:
+# curl --header "Content-Type: application/json"   --request POST   --data '{"query":"has_type(A,B).","id":"1"}'   http://localhost:62226/knowrob/api/v1.0/query
+@app.route('/knowrob/api/v1.0/query', methods=['POST'])
+def query_rest():
+    request.get_json(force=True)
+    args = parser.parse_args()
+    query_str = str(args['query'])
+    in_id = str(args['id'])
+    return rosrest.query(in_id, query_str)
+
+
+# Test call with:
+# curl --header "Content-Type: application/json"   --request GET   --data '{"id":"1"}'   http://localhost:62226/knowrob/api/v1.0/next_solution
+@app.route('/knowrob/api/v1.0/next_solution', methods=['GET'])
+def next_rest():
+    request.get_json(force=True)
+    args = parser.parse_args()
+    in_id = str(args['id'])
+    return rosrest.next(in_id)
+
+
+# Test call with:
+# curl --header "Content-Type: application/json"   --request GET   --data '{"id":"1"}'   http://localhost:62226/knowrob/api/v1.0/all_solutions
+@app.route('/knowrob/api/v1.0/all_solutions', methods=['GET'])
+def all_rest():
+    request.get_json(force=True)
+    args = parser.parse_args()
+    in_id = str(args['id'])
+    return rosrest.all(in_id)
+
+
+# Test call with:
+# curl --header "Content-Type: application/json"   --request POST   --data '{"id":"1"}'   http://localhost:62226/knowrob/api/v1.0/finish
+@app.route('/knowrob/api/v1.0/finish', methods=['POST'])
+def finish_rest():
+    request.get_json(force=True)
+    args = parser.parse_args()
+    in_id = str(args['id'])
+    return rosrest.finish(in_id)
 
 
 if __name__ == '__main__':
     rospy.init_node('rosprolog_rest', anonymous=True)
-    rosrest = RosRest()
+    rosrest = RosprologRestClient()
     app.run(host='0.0.0.0',debug=True,port=62226)
