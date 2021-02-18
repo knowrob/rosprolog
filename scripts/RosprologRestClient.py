@@ -60,6 +60,9 @@ class RosprologRestClient:
 		return solutions
 
 	def finish_query(self, query_id):
-		self._finish_query_srv(id=query_id)
-		self.query_ids.remove(query_id)
-		return jsonify(success=False)
+		if query_id in self.query_ids:
+			self._finish_query_srv(id=query_id)
+			self.query_ids.remove(query_id)
+			return jsonify(success=True)
+		else:
+			return jsonify(success=False)
