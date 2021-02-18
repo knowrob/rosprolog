@@ -12,8 +12,7 @@ class RosprologRestClient:
 		:type timeout: int
 		"""
 		self.id = 0
-		self.finished = False
-		self.solutions = []
+		self.query_ids = []
 		self._simple_query_srv = rospy.ServiceProxy(
 			'{}/query'.format(name_space), PrologQuery)
 		self._next_solution_srv = rospy.ServiceProxy(
@@ -34,34 +33,33 @@ class RosprologRestClient:
 			self.id -= 1
 			return False
 		else:
-			self.finished = False
-			self.solutions = []
+			self.query_ids.append(str(self.id))
 			return True
 
-	def get_next_solution(self):
-		next_solution = self._next_solution_srv(id=str(self.id))
-		rospy.loginfo(str(next_solution))
+	def get_next_solution(self, query_id):
+		next_solution = self._next_solution_srv(id=query_id)
 		if not next_solution.status == PrologNextSolutionResponse.OK:
 			return jsonify(success=False)
 		else:
 			solution = json.loads(next_solution.solution)
-			self.solutions.append(solution)
 			return solution
 
-	def get_all_solutions(self):
+	def get_all_next_solutions(self, query_id):
+		solutions = []
 		try:
-			while not self.finished:
-				next_solution = self._next_solution_srv(id=str(self.id))
+			while query_id in self.query_ids:
+				next_solution = self._next_solution_srv(id=query_id)
 				if next_solution.status == PrologNextSolutionResponse.OK:
-					self.solutions.append(json.loads(next_solution.solution))
+					solutions.append(json.loads(next_solution.solution))
 				elif next_solution.status == PrologNextSolutionResponse.NO_SOLUTION:
 					break
 				else:
 					return jsonify(success=False)
 		finally:
-			self.finish()
-		return self.solutions
+			self.finish_query(query_id)
+		return solutions
 
-	def finish(self):
-		self._finish_query_srv(id=str(self.id))
-		self.finished = True
+	def finish_query(self, query_id):
+		self._finish_query_srv(id=query_id)
+		self.query_ids.remove(query_id)
+		return jsonify(success=False)
