@@ -23,15 +23,15 @@ ns = api.namespace('knowrob/api/v1.0',
 
 rosrest = RosprologRestClient()
 
-@ns.route("/solutions/getNextSolution/<string:query_id>")
+@ns.route("/solutions/getNextSolution/<string:queryId>")
 class NextSolutions(Resource):
-	def get(self, query_id):
-		return rosrest.get_next_solution(query_id)
+	def get(self, queryId):
+		return rosrest.get_next_solution(queryId)
 
-@ns.route("/solutions/getAllNextSolutions/<string:query_id>")
+@ns.route("/solutions/getAllNextSolutions/<string:queryId>")
 class AllNextSolution(Resource):
-	def get(self, query_id):
-		return rosrest.get_all_next_solutions(query_id)
+	def get(self, queryId):
+		return rosrest.get_all_next_solutions(queryId)
 
 @ns.route("/query")
 class Query(Resource):
@@ -42,10 +42,10 @@ class Query(Resource):
 		api.payload['id'] = rosrest.id
 		return api.payload
 
-@ns.route("/query/<string:query_id>")
+@ns.route("/query/<string:queryId>")
 class DeleteQuery(Resource):
-	def delete(self, query_id):
-		return rosrest.finish_query(query_id)
+	def delete(self, queryId):
+		return rosrest.finish_query(queryId)
 
 if __name__ == '__main__':
 	rospy.init_node('rosprolog_rest', anonymous=True)
