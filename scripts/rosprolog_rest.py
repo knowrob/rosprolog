@@ -32,7 +32,7 @@ class Query(Resource):
 	@ns.marshal_with(query)
 	def post(self):
 		rosrest.post_query(api.payload['query'])
-		api.payload['response'] = rosrest.get_all_next_solutions()
+		api.payload['response'] = rosrest.get_solutions(api.payload['solutionCount'])
 		return api.payload
 
 if __name__ == '__main__':
