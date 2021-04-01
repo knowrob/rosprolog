@@ -5,6 +5,7 @@ from RosprologRestClient import RosprologRestClient
 from gevent.pywsgi import WSGIServer
 from flask import Flask
 from flask_restplus import Api, Resource, fields
+from werkzeug.exceptions import BadRequest
 
 app = Flask(__name__)
 app.config['RESTPLUS_MASK_SWAGGER'] = False
@@ -29,9 +30,11 @@ class Query(Resource):
 	@ns.expect(query)
 	@ns.marshal_with(query)
 	def post(self):
-		rosrest.post_query(api.payload['query'])
-		api.payload['response'] = rosrest.get_solutions(api.payload['solutionCount'])
-		return api.payload
+		if rosrest.post_query(api.payload['query']):
+			api.payload['response'] = rosrest.get_solutions(api.payload['solutionCount'])
+			return api.payload
+		else:
+			raise BadRequest('Bad query')
 
 if __name__ == '__main__':
 	rospy.init_node('rosprolog_rest', anonymous=True)
