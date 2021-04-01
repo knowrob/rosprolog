@@ -2,7 +2,7 @@ import rospy
 from json_prolog_msgs.srv import PrologQuery, PrologNextSolution, PrologNextSolutionResponse, PrologFinish
 import json
 from flask import Flask, jsonify, request
-
+from werkzeug.exceptions import BadRequest
 
 class RosprologRestClient:
 	def __init__(self, name_space='rosprolog', timeout=None, wait_for_services=True):
@@ -44,7 +44,7 @@ class RosprologRestClient:
 				elif next_solution.status == PrologNextSolutionResponse.NO_SOLUTION:
 					break
 				else:
-					return solutions
+					raise BadRequest('Bad query')
 		finally:
 			self.finish_query()
 		return solutions

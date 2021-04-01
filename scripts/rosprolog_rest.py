@@ -5,7 +5,6 @@ from RosprologRestClient import RosprologRestClient
 from gevent.pywsgi import WSGIServer
 from flask import Flask
 from flask_restplus import Api, Resource, fields
-from werkzeug.exceptions import BadRequest
 
 app = Flask(__name__)
 app.config['RESTPLUS_MASK_SWAGGER'] = False
@@ -16,7 +15,7 @@ api = Api(app, version='1.0', title='KnowRob API',
 
 query = api.model('Query', {
 	'query': fields.String(required=True, description='The query string'),
-	'solutionCount': fields.Integer(required=True, default=100, description='The number of solutions'),
+	'maxSolutionCount': fields.Integer(required=True, default=100, description='The maximal number of solutions'),
 	'response': fields.List(fields.Raw, readonly=True, description='The response list')
 })
 
@@ -30,11 +29,9 @@ class Query(Resource):
 	@ns.expect(query)
 	@ns.marshal_with(query)
 	def post(self):
-		if rosrest.post_query(api.payload['query']):
-			api.payload['response'] = rosrest.get_solutions(api.payload['solutionCount'])
-			return api.payload
-		else:
-			raise BadRequest('Bad query')
+		rosrest.post_query(api.payload['query'])
+		api.payload['response'] = rosrest.get_solutions(api.payload['maxSolutionCount'])
+		return api.payload
 
 if __name__ == '__main__':
 	rospy.init_node('rosprolog_rest', anonymous=True)
