@@ -16,7 +16,7 @@ api = Api(app, version='1.0', title='KnowRob API',
 query = api.model('Query', {
 	'query': fields.String(required=True, description='The query string'),
 	'solutionCount': fields.Integer(required=True, default=100, description='The number of solutions'),
-	'response': fields.List(dict, readonly=True, description='The response list')
+	'response': fields.List(fields.String, readonly=True, description='The response list')
 })
 
 ns = api.namespace('knowrob/api/v1.0',
@@ -29,7 +29,6 @@ class Query(Resource):
 	@ns.expect(query)
 	@ns.marshal_with(query)
 	def post(self):
-		print(api.payload)
 		rosrest.post_query(api.payload['query'])
 		api.payload['response'] = rosrest.get_solutions(api.payload['solutionCount'])
 		return api.payload

@@ -38,16 +38,16 @@ class RosprologRestClient:
 		solutions = []
 		try:
 			for _ in range(solution_count):
-				next_solution = self._next_solution_srv(id=self.id)
+				next_solution = self._next_solution_srv(id=str(self.id))
 				if next_solution.status == PrologNextSolutionResponse.OK:
 					solutions.append(json.loads(next_solution.solution))
 				elif next_solution.status == PrologNextSolutionResponse.NO_SOLUTION:
 					break
 				else:
-					return jsonify(success=False)
+					return solutions
 		finally:
 			self.finish_query()
 		return solutions
 
 	def finish_query(self):
-		self._finish_query_srv(id=self.id)
+		self._finish_query_srv(id=str(self.id))
