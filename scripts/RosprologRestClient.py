@@ -40,7 +40,7 @@ class RosprologRestClient:
 			for _ in range(solution_count):
 				next_solution = self._next_solution_srv(id=str(self.id))
 				if next_solution.status == PrologNextSolutionResponse.OK:
-					solutions.append(json.loads(next_solution.solution))
+					solutions.append(dict(json.loads(next_solution.solution)))
 				elif next_solution.status == PrologNextSolutionResponse.NO_SOLUTION:
 					break
 				else:

@@ -16,7 +16,7 @@ api = Api(app, version='1.0', title='KnowRob API',
 query = api.model('Query', {
 	'query': fields.String(required=True, description='The query string'),
 	'solutionCount': fields.Integer(required=True, default=100, description='The number of solutions'),
-	'response': fields.List(fields.String, readonly=True, description='The response list')
+	'response': fields.List(fields.Raw, readonly=True, description='The response list')
 })
 
 ns = api.namespace('knowrob/api/v1.0',
