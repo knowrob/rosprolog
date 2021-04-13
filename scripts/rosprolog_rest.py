@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import rospy
-import json
 from RosprologRestClient import RosprologRestClient
 from gevent.pywsgi import WSGIServer
 from flask import Flask

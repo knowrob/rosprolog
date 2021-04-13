@@ -1,7 +1,6 @@
 import rospy
 from json_prolog_msgs.srv import PrologQuery, PrologNextSolution, PrologNextSolutionResponse, PrologFinish
 import json
-from flask import Flask, jsonify, request
 from werkzeug.exceptions import BadRequest
 
 class RosprologRestClient:
