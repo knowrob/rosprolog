@@ -6,9 +6,9 @@ from werkzeug.exceptions import BadRequest
 class RosprologRestClient:
 	def __init__(self, name_space='rosprolog', timeout=None, wait_for_services=True):
 		"""
-		:type name_space: str
-		:param timeout: Amount of time in seconds spend waiting for rosprolog to become available.
-		:type timeout: int
+		@type 	name_space: str
+		@param 	timeout: Amount of time in seconds spend waiting for rosprolog to become available.
+		@type 	timeout: int
 		"""
 		self.id = 0
 		self._simple_query_srv = rospy.ServiceProxy(
@@ -25,18 +25,26 @@ class RosprologRestClient:
 			rospy.loginfo('{} services ready'.format(name_space))
 
 	def post_query(self, query):
+		"""
+		@param	query: the query string
+		@type		query: str
+		"""
 		self.id += 1
 		result = self._simple_query_srv(id=str(self.id), query=query)
-		if not result.ok:
+		if result.ok:
+			return True
+		else:
 			self.id -= 1
 			return False
-		else:
-			return True
 
-	def get_solutions(self, solution_count):
+	def get_solutions(self, max_solution_count):
+		"""
+		@param	solution_count: the query string
+		@type		solution_count: int
+		"""
 		solutions = []
 		try:
-			for _ in range(solution_count):
+			while(len(solutions) < max_solution_count):
 				next_solution = self._next_solution_srv(id=str(self.id))
 				if next_solution.status == PrologNextSolutionResponse.OK:
 					solutions.append(dict(json.loads(next_solution.solution)))
