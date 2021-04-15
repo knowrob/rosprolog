@@ -1,16 +1,30 @@
 #!/usr/bin/env python3
 import rospy
+import os
 from gevent.pywsgi import WSGIServer  # Web Server
 from flask import Flask
 from flask_restplus import Api, Resource, fields
 from RosprologRestClient import RosprologRestClient
+
+# Set KnowRob version and KnowRob Port from environment variables
+KNOWROB_VERSION = os.getenv('KNOWROB_VERSION')
+if KNOWROB_VERSION is None:
+    KNOWROB_VERSION = '1.0'
+else:
+    KNOWROB_VERSION = str(KNOWROB_VERSION)
+
+KNOWROB_PORT = os.getenv('KNOWROB_PORT')
+if KNOWROB_PORT is None:
+    KNOWROB_PORT = 62226
+else:
+    KNOWROB_PORT = int(KNOWROB_PORT)
 
 app = Flask(__name__)
 app.config['RESTPLUS_MASK_SWAGGER'] = False
 
 # API titel
 api = Api(app,
-          version='1.0',
+          version=KNOWROB_VERSION,
           title='KnowRob API',
           description='KnowRob API reference',
           )
@@ -23,8 +37,8 @@ query = api.model('Query', {
 })
 
 # Endpoint
-ns = api.namespace('knowrob/api/v1.0',
-                   description='Operations related to KnowRob')
+ns = api.namespace('knowrob/api/' + KNOWROB_VERSION,
+                description='Operations related to KnowRob')
 
 # ROS Client for prolog
 rosrest = RosprologRestClient()
@@ -42,5 +56,6 @@ class Query(Resource):
 
 if __name__ == '__main__':
     rospy.init_node('rosprolog_rest', anonymous=True)
-    http_server = WSGIServer(('', 62226), app)
+    
+    http_server = WSGIServer(('', KNOWROB_PORT), app)
     http_server.serve_forever()
