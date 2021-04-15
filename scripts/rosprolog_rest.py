@@ -9,7 +9,7 @@ from RosprologRestClient import RosprologRestClient
 # Set KnowRob version and KnowRob Port from environment variables
 KNOWROB_VERSION = os.getenv('KNOWROB_VERSION')
 if KNOWROB_VERSION is None:
-    KNOWROB_VERSION = '1.0'
+    KNOWROB_VERSION = 'v1.0'
 else:
     KNOWROB_VERSION = str(KNOWROB_VERSION)
 
