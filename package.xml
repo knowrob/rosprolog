@@ -36,10 +36,6 @@
   <run_depend>message_runtime</run_depend>
   <run_depend>json_prolog_msgs</run_depend>
   <run_depend>python-future</run_depend>
-
-  <!--For rosprolog_rest-->
-  <run_depend>python3-werkzeug</run_depend>
-  <run_depend>python3-flask</run_depend>
   
   <export>
     <rosdoc config="rosdoc.yaml"/>
