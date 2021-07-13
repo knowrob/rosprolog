@@ -7,7 +7,7 @@ The ros node rosprolog_rest provides an REST API for KnowRob.
 
 1. Install the following python packages:
 ```
-sudo -H pip3 install flask flask_restplus gevent werkzeug==0.16.1
+sudo -H pip3 install flask==1.1.4 flask_restplus gevent werkzeug==0.16.1
 ```
 
 2. Update rosdep
