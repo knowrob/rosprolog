@@ -43,17 +43,18 @@ class RosprologRestClient:
 		@type		solution_count: int
 		"""
 		solutions = []
-		try:
-			while(len(solutions) < max_solution_count):
-				next_solution = self._next_solution_srv(id=str(self.id))
-				if next_solution.status == PrologNextSolutionResponse.OK:
-					solutions.append(dict(json.loads(next_solution.solution)))
-				elif next_solution.status == PrologNextSolutionResponse.NO_SOLUTION:
-					break
-				else:
-					raise BadRequest('Bad query')
-		finally:
-			self.finish_query()
+		if max_solution_count > 0:
+			try:
+				while(len(solutions) < max_solution_count):
+					next_solution = self._next_solution_srv(id=str(self.id))
+					if next_solution.status == PrologNextSolutionResponse.OK:
+						solutions.append(dict(json.loads(next_solution.solution)))
+					elif next_solution.status == PrologNextSolutionResponse.NO_SOLUTION:
+						break
+					else:
+						raise BadRequest('Bad query')
+			finally:
+				self.finish_query()
 		return solutions
 
 	def finish_query(self):
