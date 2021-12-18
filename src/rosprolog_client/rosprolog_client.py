@@ -1,7 +1,5 @@
 import json
 
-from future.utils import implements_iterator
-
 import rospy
 from json_prolog_msgs import srv
 
@@ -9,14 +7,12 @@ from json_prolog_msgs import srv
 class PrologException(Exception):
     pass
 
-###
-# NOTE: needed for *next* that works with Python2 and Python3
-@implements_iterator
+
 class Upper(object):
     def __init__(self, iterable):
         self._iter = iter(iterable)
-    def __next__(self):           # Py3-style iterator interface
-        return next(self._iter)   # builtin next() function calls
+    def __next__(self):
+        return next(self._iter)
     def __iter__(self):
         return self
 

@@ -35,7 +35,6 @@
   <run_depend>geometry_msgs</run_depend>
   <run_depend>message_runtime</run_depend>
   <run_depend>json_prolog_msgs</run_depend>
-  <run_depend>python-future</run_depend>
   
   <export>
     <rosdoc config="rosdoc.yaml"/>
