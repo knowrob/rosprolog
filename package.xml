@@ -1,4 +1,4 @@
-<package>
+<package format="3">
   <name>rosprolog</name>
   <version>1.0.0</version>
   <description>
@@ -26,17 +26,18 @@
   <build_depend>message_generation</build_depend>
   <build_depend>json_prolog_msgs</build_depend>
   <build_depend>libjson-glib</build_depend>
-  
-  <run_depend>swi-prolog</run_depend>
-  <run_depend>roslib</run_depend>
-  <run_depend>rospack</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>rospy</run_depend>
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>message_runtime</run_depend>
-  <run_depend>json_prolog_msgs</run_depend>
-  <run_depend>python-future</run_depend>
-  
+
+  <exec_depend>swi-prolog</exec_depend>
+  <exec_depend>roslib</exec_depend>
+  <exec_depend>rospack</exec_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>message_runtime</exec_depend>
+  <exec_depend>json_prolog_msgs</exec_depend>
+  <exec_depend condition="$ROS_PYTHON_VERSION == 2">python-future</exec_depend>
+  <exec_depend condition="$ROS_PYTHON_VERSION == 3">python3-future</exec_depend>
+
   <export>
     <rosdoc config="rosdoc.yaml"/>
   </export>
