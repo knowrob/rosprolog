@@ -8,14 +8,6 @@ class PrologException(Exception):
     pass
 
 
-class Upper(object):
-    def __init__(self, iterable):
-        self._iter = iter(iterable)
-    def __next__(self):
-        return next(self._iter)
-    def __iter__(self):
-        return self
-
 class PrologQuery(object):
     def __init__(self, query_str, simple_query_srv, next_solution_srv, finish_srv, iterative=True):
         """
@@ -123,7 +115,7 @@ class Prolog(object):
         try:
             q = PrologQuery(query_str, simple_query_srv=self._simple_query_srv,
                             next_solution_srv=self._next_solution_srv, finish_srv=self._finish_query_srv)
-            return next(Upper(q.solutions()))
+            return next(q.solutions())
         except StopIteration:
             return []
         finally:

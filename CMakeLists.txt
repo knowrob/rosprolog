@@ -111,3 +111,8 @@ install(
 FILE(GLOB sh_files "scripts/*")
 install(PROGRAMS ${sh_files}
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/scripts/)
+
+# Add rosprolog_rest
+catkin_install_python(PROGRAMS scripts/rosprolog_rest.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
