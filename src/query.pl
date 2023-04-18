@@ -42,8 +42,10 @@ rosprolog_encode(EmptyList,[]) :-
   ground(EmptyList),
   EmptyList=[],!.
 
-rosprolog_encode([X|Xs],[Y|Ys]) :-
-  ground(X),ground(Xs),
+rosprolog_encode(List,[Y|Ys]) :-
+  % allow lists that contain non-ground entries
+  list_parts(List, X, Xs),
+  % ground(X),ground(Xs),
   rosprolog_encode(X,Y),
   rosprolog_encode(Xs,Ys),!.
 
@@ -55,10 +57,23 @@ rosprolog_encode(X,X) :-
   ( atom(X) ; is_dict(X) ; number(X) ), !.
 
 rosprolog_encode(Term,_{term: [Functor|Args_json]}) :-
-  compound(Term), !,
+  compound(Term),
   Term =.. [Functor|Args_pl],
+  % If the Term is a nonempty list, it is a term of the form
+  % '[|]'(Head, Tail)
+  % Normally lists should be handled above, but when that doesn't happen (for example because there are variables in the list and the old ground-based check is used), this would result in a recursion without a base case.
+  Term \== '[|]',
+  !,
   rosprolog_encode(Args_pl,Args_json).
 
 rosprolog_encode(Unbound,'_') :-
   not(ground(Unbound)),!.
-  
+
+%% list_parts(@List, -Head, -Tail) is semidet.
+%
+% Checks if List is a non-empty list and returs the head and tail of the list.
+% If List is not sufficiently instantiated, this predicate fails silently. 
+list_parts(List, Head, Tail) :-
+  compound(List),
+  List =.. [Functor, Head, Tail],
+  Functor == '[|]'.
